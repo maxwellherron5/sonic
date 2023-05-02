@@ -1,7 +1,5 @@
-use std::str::FromStr;
-
 use reqwest::blocking::Client;
-use reqwest::header::{HeaderMap, HeaderValue, HeaderName, AUTHORIZATION, CONTENT_TYPE};
+use reqwest::header::{HeaderMap, HeaderValue, AUTHORIZATION, CONTENT_TYPE};
 use serde_json::{Value, json};
 
 
@@ -42,8 +40,6 @@ impl SpotifyClient {
     }
 
     fn build_headers(&self) -> HeaderMap {
-        // let x = format!("Bearer {}", &self.access_token.replace("\"", ""));
-        // println!("{}", x);
         let authorization: HeaderValue = HeaderValue::from_str(&format!("Bearer {}", &self.access_token.replace("\"", ""))).unwrap();
         let mut headers = HeaderMap::new();
         headers.insert(AUTHORIZATION, authorization);
