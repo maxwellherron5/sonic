@@ -29,7 +29,7 @@ impl SpotifyClient {
         //     ("redirect_uri", "http://localhost:7777/callback".to_string())
         // ];   
         // let params = [
-        //     ("client_id", "a3a31c215fdf4067a602ca39c55e73b4"),
+        //     ("client_id", ""),
         //     ("response_type", "code"),
         //     ("scope", "playlist-modify-public"),
         //     ("redirect_uri", "http://localhost:7777/callback")
@@ -57,6 +57,29 @@ impl SpotifyClient {
           .form(&request_body)
           .send()?;
         
+        let response_body: Value = response.json()?;
+        println!("{:?}", response_body);
+        return Ok(response_body["access_token"].to_string());
+    }
+
+    fn get_access_token_(client_id: &String, client_secret: &String, http_client: &Client) -> Result<String, Box<dyn std::error::Error>> {
+        let request_body = json!(
+            {
+                "grant_type": "authorization_code",
+                "code": "AQBDE7ZAUCqcAmpxjO4gEjkWAwAC4WQZiWtSq1KIRKgslm_dvDIg8fXiL6FRVgF5QcYKOmpadu4lUstoPb7JO0gfcryKlijaEYu-t18Kk_gq-3bHRjOAV9k_kcZ9G3o5EiJf2TFm42vG_SbcKn7uc5BlnqrcABSpvwxy4YOyvwynZVBMK4iSbTxHLCkpdmqbnG_Pbu4-xeqGhA",
+                "redirect_uri": "http://localhost:7777/callback",
+                "client_secret": "9736880dc1444808ade0b3a6b3771732",
+                "client_id": "a3a31c215fdf4067a602ca39c55e73b4",
+            }
+        );
+    
+        let response = http_client
+          .post("https://accounts.spotify.com/api/token")
+          .header("Content-Type", "application/x-www-form-urlencoded")
+          .form(&request_body)
+          .send()?;
+        
+        // println!("{:?}", response);
         let response_body: Value = response.json()?;
         println!("{:?}", response_body);
         return Ok(response_body["access_token"].to_string());
