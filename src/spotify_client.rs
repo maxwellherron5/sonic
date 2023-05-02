@@ -1,7 +1,7 @@
 use reqwest::blocking::Client;
 use reqwest::header::{HeaderMap, HeaderValue, AUTHORIZATION, CONTENT_TYPE};
 use serde_json::{Value, json};
-
+use open;
 
 const API_URL: &str = "https://api.spotify.com/v1";
 // TODO this will eventually be user configurable
@@ -19,10 +19,33 @@ impl SpotifyClient {
         SpotifyClient {http_client, access_token}
     }
 
-    fn get_access_token(client_id: &String, client_secret: &String, http_client: &Client) -> Result<String, Box<dyn std::error::Error>> {
+    fn get_access_token_(client_id: &String, client_secret: &String, http_client: &Client) -> Result<String, Box<dyn std::error::Error>> {
+
+        // AUTHORIZATION SCOPES
+        // let params = [
+        //     ("client_id", client_id.to_string()),
+        //     ("response_type", "code".to_string()),
+        //     ("scope", "playlist-modify-public".to_string()),
+        //     ("redirect_uri", "http://localhost:7777/callback".to_string())
+        // ];   
+        // let params = [
+        //     ("client_id", "a3a31c215fdf4067a602ca39c55e73b4"),
+        //     ("response_type", "code"),
+        //     ("scope", "playlist-modify-public"),
+        //     ("redirect_uri", "http://localhost:7777/callback")
+        // ];       
+        // let resp = http_client
+        //   .get("https://accounts.spotify.com/authorize?")
+        //   .query(&params)  
+        //   .send()?;
+        // println!("{:?}", resp);
+        // open::that("https://accounts.spotify.com/authorize?scope=playlist-modify-public&response_type=code&redirect_uri=http://localhost:7777/callback&client_id=Da3a31c215fdf4067a602ca39c55e73b4")?;
+        // AUTHORIZATION SCOPES
+
         let request_body = json!(
             {
                 "grant_type": "client_credentials",
+                "scope": "playlist-modify-public",
                 "client_id": client_id,
                 "client_secret": client_secret,
             }
@@ -35,7 +58,30 @@ impl SpotifyClient {
           .send()?;
         
         let response_body: Value = response.json()?;
+        println!("{:?}", response_body);
+        return Ok(response_body["access_token"].to_string());
+    }
 
+    fn get_access_token(client_id: &String, client_secret: &String, http_client: &Client) -> Result<String, Box<dyn std::error::Error>> {
+        let request_body = json!(
+            {
+                "grant_type": "authorization_code",
+                "code": "AQBDE7ZAUCqcAmpxjO4gEjkWAwAC4WQZiWtSq1KIRKgslm_dvDIg8fXiL6FRVgF5QcYKOmpadu4lUstoPb7JO0gfcryKlijaEYu-t18Kk_gq-3bHRjOAV9k_kcZ9G3o5EiJf2TFm42vG_SbcKn7uc5BlnqrcABSpvwxy4YOyvwynZVBMK4iSbTxHLCkpdmqbnG_Pbu4-xeqGhA",
+                "redirect_uri": "http://localhost:7777/callback",
+                "client_secret": "9736880dc1444808ade0b3a6b3771732",
+                "client_id": "a3a31c215fdf4067a602ca39c55e73b4",
+            }
+        );
+    
+        let response = http_client
+          .post("https://accounts.spotify.com/api/token")
+          .header("Content-Type", "application/x-www-form-urlencoded")
+          .form(&request_body)
+          .send()?;
+        
+        // println!("{:?}", response);
+        let response_body: Value = response.json()?;
+        println!("{:?}", response_body);
         return Ok(response_body["access_token"].to_string());
     }
 
@@ -55,14 +101,23 @@ impl SpotifyClient {
           .send()?;
 
         let response_body: Value = response.json()?;
-        println!("{:?}", response_body);
+        // println!("{:?}", response_body);
         // Ok(())
         Ok(response_body)
     }
 
-    // fn make_post_request(&self, endpoint: &str) -> Result<(), Box<dyn std::error::Error>> {
-
-    // }
+    fn make_post_request(&self, endpoint: &str, request_body: serde_json::Value) -> Result<(), Box<dyn std::error::Error>> {
+        let headers: HeaderMap = self.build_headers();
+        let response = self.http_client
+          .post(endpoint)
+          .headers(headers)
+          .json(&request_body)
+          .send()?;
+        
+        let response_body: Value = response.json()?;
+        println!("{:?}", response_body);
+        Ok(())
+    }
 
     pub fn get_artist_details(&self, artist_id: &str) -> Result<(), Box<dyn std::error::Error>> {
         let endpoint = format!("{API_URL}/artists/{artist_id}");
@@ -77,7 +132,17 @@ impl SpotifyClient {
         return uri
     }
 
-    pub fn add_to_playlist(&self, track_id: &str) {
-        let endpoint = format!("{API_URL}/playlists/{track_id}");
+    pub fn add_to_playlist(&self, track_uri: &str) {
+        let endpoint = format!("{API_URL}/playlists/{PLAYLIST_ID}/tracks");
+
+        let request_body = json!(
+            {
+                "uris": [
+                    track_uri
+                ]
+            }
+        );
+        println!("Request body: {:?}, {}", request_body, endpoint);
+        let response = self.make_post_request(&endpoint, request_body);
     }
 }
