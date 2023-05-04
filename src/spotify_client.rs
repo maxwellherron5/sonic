@@ -106,6 +106,7 @@ impl SpotifyClient {
         let endpoint = format!("{API_URL}/tracks/{track_id}");
         let response = self.make_get_request(&endpoint).unwrap();
         let uri = response["uri"].to_string();
+        println!("{:?} URI HERE", uri);
         return uri
     }
 
