@@ -19,7 +19,7 @@ impl SpotifyClient {
         SpotifyClient {http_client, access_token}
     }
 
-    fn get_access_token_(client_id: &String, client_secret: &String, http_client: &Client) -> Result<String, Box<dyn std::error::Error>> {
+    fn get_access_token(client_id: &String, client_secret: &String, http_client: &Client) -> Result<String, Box<dyn std::error::Error>> {
 
         // AUTHORIZATION SCOPES
         // let params = [
