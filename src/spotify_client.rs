@@ -33,6 +33,30 @@ impl SpotifyClient {
         }
     }
 
+    fn authorize_app(
+        client_id: &String,
+        client_secret: &String,
+        http_client: &Client,
+    ) -> Result<String, Box<dyn std::error::Error>> {
+        let request_body = json!(
+            {
+                "response_type": "code",
+                "scope": "playlist-modify-public",
+                "client_id": client_id,
+            }
+        );
+
+        let response = http_client
+            .post("https://accounts.spotify.com/authorize?")
+            .header("Content-Type", "application/x-www-form-urlencoded")
+            .form(&request_body)
+            .send()?;
+
+        let response_body: Value = response.json()?;
+        println!("{:?}", response_body);
+        return Ok(response_body["access_token"].to_string());
+    }
+
     fn get_access_token(
         client_id: &String,
         client_secret: &String,
@@ -113,8 +137,7 @@ impl SpotifyClient {
     pub fn get_track_uri(&self, track_id: &str) -> String {
         let endpoint = format!("{API_URL}/tracks/{track_id}");
         let response = self.make_get_request(&endpoint).unwrap();
-        let uri = response["uri"].to_string();
-        println!("{:?} URI HERE", uri);
+        let uri = response["uri"].to_string().replace("\"", "");
         return uri;
     }
 
