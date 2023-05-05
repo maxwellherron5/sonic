@@ -1,10 +1,10 @@
 use std::env;
 
-use url::Url;
 use serenity::async_trait;
 use serenity::model::channel::Message;
 use serenity::model::gateway::Ready;
 use serenity::prelude::*;
+use url::Url;
 
 use crate::spotify_client;
 
@@ -14,14 +14,16 @@ struct Handler {
 
 impl Default for Handler {
     fn default() -> Handler {
-        Handler { spotify_client: spotify_client::SpotifyClient::new() }
+        Handler {
+            spotify_client: spotify_client::SpotifyClient::new(),
+        }
     }
 }
 
 #[async_trait]
 impl EventHandler for Handler {
     async fn message(&self, ctx: Context, msg: Message) {
-        if !msg.author.bot{
+        if !msg.author.bot {
             // Try to see if a URL is in the message
             let url = Url::parse(&msg.content);
             match url {
@@ -31,8 +33,8 @@ impl EventHandler for Handler {
                     // let client_secret = env::var("SPOTIFY_CLIENT_SECRET").expect("Expected a token in the environment");
                     // let spotify_client = spotify_client::SpotifyClient::new(client_id, client_secret);
                     self.spotify_client.get_track_uri(id.unwrap());
-                },
-                Err(_) => println!("Message does not contain a URL")
+                }
+                Err(_) => println!("Message does not contain a URL"),
             }
         }
     }
@@ -42,13 +44,11 @@ impl EventHandler for Handler {
     }
 }
 
-
 // pub struct DiscordClient {
 //     spotify_client: SpotifyifyClient,
 //     token: String,
 //     intents: GatewayIntents,
 // }
-
 
 // impl DiscordClient {
 //     pub fn new(spotify_client: SpotifyifyClient, token: String, intents: GatewayIntents) -> DiscordClient {
@@ -68,10 +68,10 @@ impl EventHandler for Handler {
 //     }
 // }
 
-
 pub async fn start_bot() {
     // Configure the client with your Discord bot token in the environment.
-    let token = env::var("DISCORD_TOKEN").expect("Expected a token in the environment");
+    let token =
+        env::var("DISCORD_TOKEN").expect("Expected a token in the environment");
     // Set gateway intents, which decides what events the bot will be notified about
     let intents = GatewayIntents::GUILD_MESSAGES
         | GatewayIntents::DIRECT_MESSAGES
@@ -80,9 +80,13 @@ pub async fn start_bot() {
     // Create a new instance of the Client, logging in as a bot. This will
     // automatically prepend your bot token with "Bot ", which is a requirement
     // by Discord for bot users.
-    let mut client =
-        Client::builder(&token, intents).event_handler(Handler { spotify_client: spotify_client::SpotifyClient::new() }).await.expect("Err creating client");
-    
+    let mut client = Client::builder(&token, intents)
+        .event_handler(Handler {
+            spotify_client: spotify_client::SpotifyClient::new(),
+        })
+        .await
+        .expect("Err creating client");
+
     if let Err(why) = client.start().await {
         println!("Client error: {:?}", why);
     }
