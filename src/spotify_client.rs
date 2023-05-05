@@ -1,3 +1,5 @@
+use std::env;
+
 use reqwest::blocking::Client;
 use reqwest::header::{HeaderMap, HeaderValue, AUTHORIZATION, CONTENT_TYPE};
 use serde_json::{Value, json};
@@ -13,7 +15,9 @@ pub struct SpotifyClient {
 }
 
 impl SpotifyClient {
-    pub fn new(client_id: String, client_secret: String) -> SpotifyClient {
+    pub fn new() -> SpotifyClient {
+        let client_id = env::var("SPOTIFY_CLIENT_ID").expect("Expected a token in the environment");
+        let client_secret = env::var("SPOTIFY_CLIENT_SECRET").expect("Expected a token in the environment");
         let http_client = Client::new();
         let access_token = SpotifyClient::get_access_token(&client_id, &client_secret, &http_client).unwrap();
         SpotifyClient {http_client, access_token}
