@@ -1,5 +1,6 @@
 use std::env;
 
+use log::{error, info};
 use serenity::async_trait;
 use serenity::model::channel::Message;
 use serenity::model::gateway::Ready;
@@ -33,13 +34,13 @@ impl EventHandler for Handler {
                         self.spotify_client.get_track_uri(id.unwrap());
                     self.spotify_client.add_to_playlist(&track_uri)
                 }
-                Err(_) => println!("Message does not contain a URL"),
+                Err(_) => info!("Message does not contain a URL"),
             }
         }
     }
 
     async fn ready(&self, _: Context, ready: Ready) {
-        println!("{} is connected!", ready.user.name);
+        info!("{} is connected!", ready.user.name);
     }
 }
 
@@ -63,6 +64,6 @@ pub async fn start_bot() {
         .expect("Err creating client");
 
     if let Err(why) = client.start().await {
-        println!("Client error: {:?}", why);
+        error!("Client error: {:?}", why);
     }
 }

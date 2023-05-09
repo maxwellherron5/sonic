@@ -18,6 +18,7 @@ serenity = { default-features = false, features = ["client", "gateway", "model",
           "rustls_backend"], version = "0.11.5"}
 url = "2.3.1"
 base64 = "0.21.0"
+log = "0.4.17"
 
 [[bin]]
 name = "sonic"

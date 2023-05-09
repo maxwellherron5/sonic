@@ -1,6 +1,7 @@
 use base64;
 use std::env;
 
+use log::{error, info};
 use open;
 use reqwest::blocking::Client;
 use reqwest::header::{HeaderMap, HeaderValue, AUTHORIZATION, CONTENT_TYPE};
@@ -60,7 +61,7 @@ impl SpotifyClient {
             .collect::<Vec<(String, String)>>();
 
         let parsed_path = url_parsed[0].1.to_owned();
-        println!("{:?}", parsed_path);
+        info!("{:?}", parsed_path);
         open::that(parsed_path)?;
 
         return Ok(());
@@ -82,7 +83,6 @@ impl SpotifyClient {
         let formatted_credentials = format!("{}:{}", client_id, client_secret);
         let auth_header =
             format!("Basic {}", base64::encode(&formatted_credentials));
-        println!("{:?}", auth_header);
         let response = http_client
             .post("https://accounts.spotify.com/api/token")
             .header("Content-Type", "application/x-www-form-urlencoded")
@@ -91,7 +91,6 @@ impl SpotifyClient {
             .send()?;
 
         let response_body: Value = response.json()?;
-        println!("{:?}", response_body);
         return Ok(response_body["access_token"].to_string());
     }
 
@@ -134,7 +133,6 @@ impl SpotifyClient {
             .send()?;
 
         let response_body: Value = response.json()?;
-        println!("{:?}", response_body);
         Ok(())
     }
 
@@ -150,16 +148,13 @@ impl SpotifyClient {
     pub fn get_track_uri(&self, track_id: &str) -> String {
         let endpoint = format!("{API_URL}/tracks/{track_id}");
         let response = self.make_get_request(&endpoint).unwrap();
-        println!("{:?}", response);
         let uri = response["uri"].to_string().replace("\"", "");
         return uri;
     }
 
     pub fn add_to_playlist(&self, track_uri: &str) {
         let endpoint = format!("{API_URL}/playlists/{PLAYLIST_ID}/tracks");
-
         let request_body = json!({ "uris": [track_uri] });
-        println!("Request body: {:?}, {}", request_body, endpoint);
         let response = self.make_post_request(&endpoint, request_body);
     }
 }
