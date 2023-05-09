@@ -29,7 +29,8 @@ impl EventHandler for Handler {
             match url {
                 Ok(url) => {
                     let id = url.path().split("/").nth(2);
-                    let track_uri = self.spotify_client.get_track_uri(id.unwrap());
+                    let track_uri =
+                        self.spotify_client.get_track_uri(id.unwrap());
                     self.spotify_client.add_to_playlist(&track_uri)
                 }
                 Err(_) => println!("Message does not contain a URL"),
@@ -41,7 +42,6 @@ impl EventHandler for Handler {
         println!("{} is connected!", ready.user.name);
     }
 }
-
 
 pub async fn start_bot() {
     // Configure the client with your Discord bot token in the environment.
