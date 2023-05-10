@@ -130,6 +130,7 @@ impl SpotifyClient {
                 return Ok(response_body);
             }
             StatusCode::UNAUTHORIZED => {
+                println!("Token expired, retrieving new token and trying again");
                 self.access_token = SpotifyClient::get_access_token(
                     &self.client_id,
                     &self.client_secret,
@@ -186,31 +187,4 @@ impl SpotifyClient {
         let request_body = json!({ "uris": [track_uri] });
         let response = self.make_post_request(&endpoint, request_body);
     }
-}
-
-fn get_access_token(
-    client_id: &String,
-    client_secret: &String,
-    http_client: &Client,
-    authorization_code: &String,
-) -> Result<String, Box<dyn std::error::Error>> {
-    let request_body = json!(
-        {
-            "code": authorization_code,
-            "grant_type": "authorization_code",
-            "redirect_uri": "http://127.0.0.1:5000/callback",
-        }
-    );
-    let formatted_credentials = format!("{}:{}", client_id, client_secret);
-    let auth_header =
-        format!("Basic {}", base64::encode(&formatted_credentials));
-    let response = http_client
-        .post("https://accounts.spotify.com/api/token")
-        .header("Content-Type", "application/x-www-form-urlencoded")
-        .header(AUTHORIZATION, auth_header)
-        .form(&request_body)
-        .send()?;
-
-    let response_body: Value = response.json()?;
-    return Ok(response_body["access_token"].to_string());
 }
