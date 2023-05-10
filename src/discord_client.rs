@@ -21,6 +21,15 @@ impl Default for Handler {
     }
 }
 
+// impl Handler {
+//     fn new() -> &'static mut Handler {
+//         let mut  spotify_client = spotify_client::SpotifyClient::new();
+//         &mut Handler {
+//             spotify_client,
+//         }
+//     }
+// }
+
 #[async_trait]
 impl EventHandler for Handler {
     async fn message(&self, ctx: Context, msg: Message) {
@@ -30,9 +39,12 @@ impl EventHandler for Handler {
             match url {
                 Ok(url) => {
                     let id = url.path().split("/").nth(2);
-                    let track_uri =
-                        self.spotify_client.get_track_uri(id.unwrap());
-                    self.spotify_client.add_to_playlist(&track_uri)
+                    let track_uri = self
+                        .spotify_client
+                        .clone()
+                        .get_track_uri(id.unwrap())
+                        .to_string();
+                    self.spotify_client.add_to_playlist(&track_uri);
                 }
                 Err(_) => info!("Message does not contain a URL"),
             }
@@ -62,6 +74,11 @@ pub async fn start_bot() {
         })
         .await
         .expect("Err creating client");
+
+    // let mut client = Client::builder(&token, intents)
+    //     .event_handler(Handler::new())
+    //     .await
+    //     .expect("Err creating client");
 
     if let Err(why) = client.start().await {
         error!("Client error: {:?}", why);

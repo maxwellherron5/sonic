@@ -5,6 +5,7 @@ use log::{error, info};
 use open;
 use reqwest::blocking::Client;
 use reqwest::header::{HeaderMap, HeaderValue, AUTHORIZATION, CONTENT_TYPE};
+use reqwest::StatusCode;
 use serde_json::{json, Value};
 use url::Url;
 
@@ -12,9 +13,13 @@ const API_URL: &str = "https://api.spotify.com/v1";
 // TODO this will eventually be user configurable
 const PLAYLIST_ID: &str = "3nf65T5wXvLYLvT6xvXoLf";
 
+#[derive(Clone)]
 pub struct SpotifyClient {
     http_client: Client,
     access_token: String,
+    client_id: String,
+    client_secret: String,
+    authorization_code: String,
 }
 
 impl SpotifyClient {
@@ -34,9 +39,13 @@ impl SpotifyClient {
             &authorization_code,
         )
         .unwrap();
+        // let access_token = String::new();
         SpotifyClient {
             http_client,
             access_token,
+            client_id,
+            client_secret,
+            authorization_code,
         }
     }
 
@@ -108,15 +117,35 @@ impl SpotifyClient {
     }
 
     fn make_get_request(
-        &self,
+        &mut self,
         endpoint: &str,
     ) -> Result<Value, Box<dyn std::error::Error>> {
         let headers: HeaderMap = self.build_headers();
         let response =
             self.http_client.get(endpoint).headers(headers).send()?;
 
-        let response_body: Value = response.json()?;
-        Ok(response_body)
+        match response.status() {
+            StatusCode::OK => {
+                let response_body: Value = response.json()?;
+                return Ok(response_body);
+            }
+            StatusCode::UNAUTHORIZED => {
+                self.access_token = SpotifyClient::get_access_token(
+                    &self.client_id,
+                    &self.client_secret,
+                    &self.http_client,
+                    &self.authorization_code,
+                )
+                .unwrap();
+                let response_body: Value = response.json()?;
+                return Ok(response_body);
+            }
+            _ => {
+                let response_body: Value = response.json()?;
+                return Ok(response_body);
+            }
+        }
+        // let response_body: Value = response.json()?;
     }
 
     fn make_post_request(
@@ -137,7 +166,7 @@ impl SpotifyClient {
     }
 
     pub fn get_artist_details(
-        &self,
+        &mut self,
         artist_id: &str,
     ) -> Result<(), Box<dyn std::error::Error>> {
         let endpoint = format!("{API_URL}/artists/{artist_id}");
@@ -145,7 +174,7 @@ impl SpotifyClient {
         Ok(())
     }
 
-    pub fn get_track_uri(&self, track_id: &str) -> String {
+    pub fn get_track_uri(&mut self, track_id: &str) -> String {
         let endpoint = format!("{API_URL}/tracks/{track_id}");
         let response = self.make_get_request(&endpoint).unwrap();
         let uri = response["uri"].to_string().replace("\"", "");
@@ -157,4 +186,31 @@ impl SpotifyClient {
         let request_body = json!({ "uris": [track_uri] });
         let response = self.make_post_request(&endpoint, request_body);
     }
+}
+
+fn get_access_token(
+    client_id: &String,
+    client_secret: &String,
+    http_client: &Client,
+    authorization_code: &String,
+) -> Result<String, Box<dyn std::error::Error>> {
+    let request_body = json!(
+        {
+            "code": authorization_code,
+            "grant_type": "authorization_code",
+            "redirect_uri": "http://127.0.0.1:5000/callback",
+        }
+    );
+    let formatted_credentials = format!("{}:{}", client_id, client_secret);
+    let auth_header =
+        format!("Basic {}", base64::encode(&formatted_credentials));
+    let response = http_client
+        .post("https://accounts.spotify.com/api/token")
+        .header("Content-Type", "application/x-www-form-urlencoded")
+        .header(AUTHORIZATION, auth_header)
+        .form(&request_body)
+        .send()?;
+
+    let response_body: Value = response.json()?;
+    return Ok(response_body["access_token"].to_string());
 }
