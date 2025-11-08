@@ -1,0 +1,11 @@
+pub mod config;
+pub mod discovery_generator;
+pub mod discord_announcer;
+pub mod discord_client;
+pub mod error;
+pub mod message_processor;
+pub mod models;
+pub mod playlist_manager;
+pub mod scheduler;
+pub mod spotify_client;
+pub mod utils;
